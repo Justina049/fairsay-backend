@@ -4,7 +4,7 @@ const db = mysql.createConnection({
 //   host: "localhost",
   host : '127.0.0.1',
   user: "justina",
-  password: "",
+  password: "Justina123$",
   database: "fairsay_db",
   connectionLimit : 10,
 });
