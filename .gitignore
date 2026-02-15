@@ -2,4 +2,4 @@
 .env
 
 # Ignore database config file
-db.js
+/config/db.js
