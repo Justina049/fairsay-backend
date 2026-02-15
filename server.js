@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const authRoutes = require("./routes/authRoutes");
+const verifyToken = require("./middleware/authMiddleware");
 
 // connect to database
 require("./config/db");
@@ -19,6 +20,14 @@ app.get("/", (req, res) => {
   res.send("FairSay API Running");
 });
 
+app.get("/api/protected", verifyToken, (req, res) => {
+  res.json({
+    message: "Protected route accessed",
+    user: req.user
+
+  })
+    
+});
 
 // Example test route
 app.get("/test", (req, res) => {
