@@ -2,12 +2,10 @@ const express = require("express");
 const router = express.Router();
 
 const verifyToken = require("../middleware/authMiddleware");
-const { submitComplaint } = require("../controllers/complaintController");
+const { submitComplaint, getAllComplaints } = require("../controllers/complaintController");
 
 router.post("/", verifyToken, submitComplaint);
-
-// console.log("verifyToken:", verifyToken);
-// console.log("submitComplaint:", submitComplaint);
+router.get("/", verifyToken, getAllComplaints);
 
 
 module.exports = router;
