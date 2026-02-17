@@ -1,4 +1,4 @@
-const { createComplaint } = require("../models/complaintModel");
+const { createComplaint, getAllComplaints } = require("../models/complaintModel");
 const { v4: uuidv4 } = require("uuid");
 
 exports.submitComplaint = async (req, res) => {
@@ -23,6 +23,27 @@ exports.submitComplaint = async (req, res) => {
     res.status(201).json({
       message: "Complaint submitted successfully",
       tracking_id: complaintData.tracking_id
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+exports.getAllComplaints = async (req, res) => {
+  try {
+    // Admin role check
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied. Admin only." });
+    }
+
+    const complaints = await getAllComplaints();
+
+    res.json({
+      message: "All complaints fetched successfully",
+      complaints
     });
 
   } catch (error) {
