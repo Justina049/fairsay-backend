@@ -20,6 +20,7 @@ const createComplaint = async (complaintData) => {
   return result;
 };
 
+// Get all complaints (Admin)
 const getAllComplaints = async () => {
   const query = `
     SELECT  * FROM complaints
@@ -30,9 +31,22 @@ const getAllComplaints = async () => {
   return rows;
 };
 
+// Get complaints by specific user
+const getComplaintsByUser = async (userId) => {
+  const query = `
+    SELECT * FROM complaints
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+  `;
+
+  const [rows] = await db.execute(query, [userId]);
+  return rows;
+};
+
 
 
 module.exports = { 
   createComplaint,
-  getAllComplaints
+  getAllComplaints,
+  getComplaintsByUser
 };
