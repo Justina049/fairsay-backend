@@ -16,8 +16,23 @@ const createComplaint = async (complaintData) => {
     complaintData.tracking_id
   ];
 
-  const [result] = await db.execute(query, values);
+  const result = await db.execute(query, values);
   return result;
 };
 
-module.exports = { createComplaint };
+const getAllComplaints = async () => {
+  const query = `
+    SELECT  * FROM complaints
+    ORDER BY created_at DESC
+  `;
+  
+  const [rows] = await db.execute(query);
+  return rows;
+};
+
+
+
+module.exports = { 
+  createComplaint,
+  getAllComplaints
+};
