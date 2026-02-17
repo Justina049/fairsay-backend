@@ -1,4 +1,4 @@
-const { createComplaint, getAllComplaints, getComplaintsByUser, getComplaintByTrackingId } = require("../models/complaintModel");
+const { createComplaint, getAllComplaints, getComplaintsByUser, getComplaintByTrackingId, updateComplaintStatus } = require("../models/complaintModel");
 const { v4: uuidv4 } = require("uuid");
 
 exports.submitComplaint = async (req, res) => {

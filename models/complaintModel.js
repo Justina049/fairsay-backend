@@ -55,10 +55,23 @@ const getComplaintByTrackingId = async (trackingId) => {
 };
 
 
+// Update complaint status
+const updateComplaintStatus = async (trackingId, status) => {
+  const query = `
+    UPDATE complaints
+    SET status = ?
+    WHERE tracking_id = ?
+  `;
+
+  const [result] = await db.execute(query, [status, trackingId]);
+  return result;
+};
+
 
 module.exports = { 
   createComplaint,
   getAllComplaints,
   getComplaintsByUser,
-  getComplaintByTrackingId
+  getComplaintByTrackingId,
+  updateComplaintStatus
 };
