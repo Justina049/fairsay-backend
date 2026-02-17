@@ -43,10 +43,22 @@ const getComplaintsByUser = async (userId) => {
   return rows;
 };
 
+// Get complaint by tracking ID
+const getComplaintByTrackingId = async (trackingId) => {
+  const query = `
+    SELECT * FROM complaints
+    WHERE tracking_id = ?
+  `;
+
+  const [rows] = await db.execute(query, [trackingId]);
+  return rows[0]; // return single complaint
+};
+
 
 
 module.exports = { 
   createComplaint,
   getAllComplaints,
-  getComplaintsByUser
+  getComplaintsByUser,
+  getComplaintByTrackingId
 };
