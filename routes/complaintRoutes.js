@@ -7,6 +7,6 @@ const { submitComplaint, getAllComplaints,  getComplaint, updateComplaintStatus 
 router.post("/", verifyToken, submitComplaint);
 router.get("/", verifyToken, getAllComplaints);
 router.get("/:tracking_id", verifyToken, getComplaint);
-router.patch("/:tracking_id/status", verifyToken, updateComplaintStatus);
+router.put("/:tracking_id/status", verifyToken, updateComplaintStatus);
 
 module.exports = router;
