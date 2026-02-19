@@ -150,6 +150,7 @@ exports.verifyEmail = async (req, res) => {
 };
 
 
+
 // LOGIN
 exports.login = async (req, res) => {
   try {
@@ -164,6 +165,12 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
+
+    // Check if email is verified
+    if (!user.email_verified) {
+      return res.status(403).json({ message: "Please verify your email before login" });
+    }
+
 
     const validPassword = await bcrypt.compare(password, user.password);
 
