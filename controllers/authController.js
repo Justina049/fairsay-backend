@@ -131,6 +131,24 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.verifyEmail = async (req, res) => {
+  const { token } = req.query;
+
+  const [rows] = await db.execute(
+    "SELECT * FROM users WHERE email_verification_token = ?",
+    [token]
+  );
+
+  if (!rows[0]) return res.status(400).json({ message: "Invalid token" });
+
+  await db.execute(
+    "UPDATE users SET email_verified = TRUE, email_verification_token = NULL WHERE id = ?",
+    [rows[0].id]
+  );
+
+  res.json({ message: "Email verified successfully" });
+};
+
 
 // LOGIN
 exports.login = async (req, res) => {
