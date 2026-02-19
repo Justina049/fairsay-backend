@@ -1,32 +1,3 @@
-// // Old version of code
-
-// const db = require("../config/db");
-
-// // Create user
-// const createUser = async (name, email, hashedPassword, role = "user") => {
-//   const [result] = await db.execute(
-//     "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
-//     [name, email, hashedPassword, role]
-//   );
-//   return result;
-// };
-
-// // Find user by email
-// const findUserByEmail = async (email) => {
-//   const [rows] = await db.execute(
-//     "SELECT * FROM users WHERE email = ?",
-//     [email]
-//   );
-//   return rows[0];
-// };
-
-// module.exports = {
-//   createUser,
-//   findUserByEmail,
-// };
-
-
-
 const db = require("../config/db");
 
 // Create user
@@ -57,6 +28,8 @@ const findUserByEmail = async (email) => {
   return rows[0];
 };
 
+
+
 // Update last login
 const updateLastLogin = async (userId) => {
   await db.execute(
@@ -65,8 +38,27 @@ const updateLastLogin = async (userId) => {
   );
 };
 
+
+// Update user profile
+const updateUserProfile = async (userId, profileData) => {
+  const { job_title, department, company_name, phone, location } = profileData;
+
+  await db.execute(
+    `UPDATE users SET
+      job_title = ?, 
+      department = ?, 
+      company_name = ?, 
+      phone = ?, 
+      location = ?, 
+      profile_completed = TRUE
+    WHERE id = ?`,
+    [job_title, department, company_name, phone, location, userId]
+  );
+};
+
 module.exports = {
   createUser,
   findUserByEmail,
   updateLastLogin,
+  updateUserProfile
 };
