@@ -95,6 +95,8 @@ const {
   findUserByEmail,
   updateLastLogin,
 } = require("../models/userModel");
+const crypto = require("crypto");
+const emailToken = crypto.randomBytes(20).toString("hex");
 
 
 // REGISTER
@@ -117,7 +119,7 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Save user
-    await createUser(first_name, last_name, email, hashedPassword);
+    await createUser(first_name, last_name, email, hashedPassword, "user", emailToken);
 
     res.status(201).json({
       message: "User registered successfully",

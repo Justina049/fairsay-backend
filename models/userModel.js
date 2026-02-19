@@ -35,13 +35,14 @@ const createUser = async (
   last_name,
   email,
   hashedPassword,
-  role = "user"
+  role = "user",
+  emailToken = null
 ) => {
   const [result] = await db.execute(
     `INSERT INTO users 
-     (first_name, last_name, email, password, role) 
-     VALUES (?, ?, ?, ?, ?)`,
-    [first_name, last_name, email, hashedPassword, role]
+     (first_name, last_name, email, password, role, email_verification_token) 
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [first_name, last_name, email, hashedPassword, role, emailToken]
   );
 
   return result;
