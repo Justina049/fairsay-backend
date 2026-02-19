@@ -56,9 +56,42 @@ const updateUserProfile = async (userId, profileData) => {
   );
 };
 
+
+
+// Approve user (Super Admin)
+const approveUser = async (userId, superAdminId) => {
+  // Check if a verification record already exists
+  const [existing] = await db.execute(
+    "SELECT id FROM admin_user_verifications WHERE user_id = ?",
+    [userId]
+  );
+
+  if (existing.length > 0) {
+    // Update existing record
+    await db.execute(
+      `UPDATE admin_user_verifications
+       SET status = 'approved',
+           reviewed_at = NOW(),
+           reviewed_by = ?
+       WHERE user_id = ?`,
+      [superAdminId, userId]
+    );
+  } else {
+    // Insert new record
+    await db.execute(
+      `INSERT INTO admin_user_verifications
+         (user_id, status, reviewed_at, reviewed_by)
+       VALUES (?, 'approved', NOW(), ?)`,
+      [userId, superAdminId]
+    );
+  }
+};
+
+
 module.exports = {
   createUser,
   findUserByEmail,
   updateLastLogin,
-  updateUserProfile
+  updateUserProfile,
+  approveUser
 };

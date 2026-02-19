@@ -4,6 +4,7 @@ const {
   createUser,
   findUserByEmail,
   updateLastLogin,
+  approveUser
 } = require("../models/userModel");
 const crypto = require("crypto");
 const emailToken = crypto.randomBytes(20).toString("hex");
@@ -133,5 +134,23 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
+exports.verifyUser = async (req, res) => {
+  try {
+    const { userId } = req.params; // ID of user to approve
+    const superAdminId = req.user.id; // ID of super admin from JWT
+
+    await approveUser(userId, superAdminId);
+
+    res.json({ message: "User verified successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 
 
