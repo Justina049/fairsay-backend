@@ -148,6 +148,25 @@ const approveUser = async (userId, superAdminId, notes = null) => {
   );
 };
 
+const updatePassword = async (userId, hashedPassword) => {
+  await db.execute(
+    "UPDATE users SET password_hash = ? WHERE id = ?",
+    [hashedPassword, userId]
+  );
+};
+
+// Auto verify email by userId (for password reset)
+const verifyUserEmailById = async (userId) => {
+  await db.execute(
+    `UPDATE users 
+     SET email_verified = TRUE, 
+         email_verification_token = NULL 
+     WHERE id = ?`,
+    [userId]
+  );
+};
+
+
 
 module.exports = {
   createUser,
@@ -156,5 +175,7 @@ module.exports = {
   verifyUserEmail,
   updateLastLogin,
   updateUserProfile,
-  approveUser
+  approveUser,
+  updatePassword,
+  verifyUserEmailById
 };

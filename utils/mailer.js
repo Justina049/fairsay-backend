@@ -39,13 +39,13 @@ const transporter = nodemailer.createTransport({
 });
 
 // Optional: verify connection at startup
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ SMTP Connection Error:", error);
-  } else {
-    console.log("✅ SMTP Server is ready to send emails");
-  }
-});
+// transporter.verify((error, success) => {
+//   if (error) {
+//     console.error("❌ SMTP Connection Error:", error);
+//   } else {
+//     console.log("✅ SMTP Server is ready to send emails");
+//   }
+// });
 
 // Send email function
 const sendEmail = async (to, subject, html) => {

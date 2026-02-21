@@ -3,7 +3,7 @@ const {
   getAllComplaints,
   getComplaintsByUser,
   getComplaintByTrackingId,
-  updateComplaintStatus
+  updateComplaintStatus,
 } = require("../models/complaintModel");
 
 const { v4: uuidv4 } = require("uuid");

@@ -9,7 +9,9 @@ const {
   createUser,
   findUserByEmail,
   verifyUserEmail,
-  updateLastLogin
+  updateLastLogin,
+  updatePassword,
+  verifyUserEmailById
 } = require("../models/userModel");
 
 const {
@@ -191,6 +193,7 @@ exports.verifyUser = async (req, res) => {
 
 
 //  FORGOT PASSWORD
+
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -210,6 +213,20 @@ exports.forgotPassword = async (req, res) => {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
     await createResetToken(user.id, hashedToken, expiresAt);
+
+    // // 🔥 FRONTEND URL (NOT backend)
+    // const resetURL = `http://localhost:3000/reset-password/${rawToken}`;
+
+    // await sendEmail(
+    //   user.email,
+    //   "Password Reset Request",
+    //   `
+    //     <h3>Password Reset</h3>
+    //     <p>Click the link below to reset your password:</p>
+    //     <a href="${resetURL}">${resetURL}</a>
+    //     <p>This link expires in 1 hour.</p>
+    //   `
+    // );
 
     console.log(
       `Reset link: http://localhost:5000/api/auth/reset-password/${rawToken}`
@@ -243,10 +260,10 @@ exports.resetPassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await db.execute(
-      "UPDATE users SET password = ? WHERE id = ?",
-      [hashedPassword, record.user_id]
-    );
+    await updatePassword(record.user_id, hashedPassword); 
+
+    // Auto verify email after successful password reset
+    await verifyUserEmailById(record.user_id);
 
     await markTokenUsed(record.id);
     await deleteUserTokens(record.user_id);
