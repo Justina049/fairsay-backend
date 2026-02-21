@@ -1,232 +1,27 @@
-// const bcrypt = require("bcryptjs");
-// const jwt = require("jsonwebtoken");
-// const {
-//   createUser,
-//   findUserByEmail,
-//   updateLastLogin,
-//   approveUser,
-//   updateUserProfile
-// } = require("../models/userModel");
-// const crypto = require("crypto");
-// const emailToken = crypto.randomBytes(20).toString("hex");
-// const { createResetToken, findResetToken, markTokenUsed } = require("../models/passwordResetModel");
-// const db = require("../config/db");
-
-
-// // REGISTER
-// exports.register = async (req, res) => {
-//   try {
-//     const { first_name, last_name, email, password } = req.body;
-
-//     // Validate input
-//     if (!first_name || !last_name || !email || !password) {
-//       return res.status(400).json({ message: "All fields are required" });
-//     }
-
-//     // Check if user already exists
-//     const existingUser = await findUserByEmail(email);
-//     if (existingUser) {
-//       return res.status(400).json({ message: "Email already registered" });
-//     }
-
-//     // Hash password
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // Save user
-//     await createUser(first_name, last_name, email, hashedPassword, "user", emailToken);
-
-//     res.status(201).json({
-//       message: "User registered successfully",
-//     });
-
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-// exports.verifyEmail = async (req, res) => {
-//   const { token } = req.query;
-
-//   const [rows] = await db.execute(
-//     "SELECT * FROM users WHERE email_verification_token = ?",
-//     [token]
-//   );
-
-//   if (!rows[0]) return res.status(400).json({ message: "Invalid token" });
-
-//   await db.execute(
-//     "UPDATE users SET email_verified = TRUE, email_verification_token = NULL WHERE id = ?",
-//     [rows[0].id]
-//   );
-
-//   res.json({ message: "Email verified successfully" });
-// };
-
-
-
-// // LOGIN
-// exports.login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-
-//     if (!email || !password) {
-//       return res.status(400).json({ message: "Email and password are required" });
-//     }
-
-//     const user = await findUserByEmail(email);
-
-//     if (!user) {
-//       return res.status(400).json({ message: "User not found" });
-//     }
-
-//     // Check if email is verified
-//     if (!user.email_verified) {
-//       return res.status(403).json({ message: "Please verify your email before login" });
-//     }
-
-//     const validPassword = await bcrypt.compare(password, user.password);
-
-//     if (!validPassword) {
-//       return res.status(400).json({ message: "Invalid password" });
-//     }
-
-//     // Update last login
-//     await updateLastLogin(user.id);
-
-//     // Create JWT
-//     const token = jwt.sign(
-//       { id: user.id, role: user.role },
-//       process.env.JWT_SECRET,
-//       { expiresIn: "1d" }
-//     );
-
-//     res.json({
-//       message: "Login successful",
-//       token,
-//       user: {
-//         id: user.id,
-//         first_name: user.first_name,
-//         last_name: user.last_name,
-//         email: user.email,
-//         role: user.role,
-//         profile_completed: user.profile_completed,
-//         verification_status: user.verification_status
-//       }
-//     });
-
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-
-// // updateUserProfile
-// exports.updateProfile = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     await updateUserProfile(userId, req.body);
-
-//     res.json({ message: "Profile updated successfully" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-
-
-// exports.verifyUser = async (req, res) => {
-//   try {
-//     const { userId } = req.params; // ID of user to approve
-//     const superAdminId = req.user.id; // ID of super admin from JWT
-
-//     await approveUser(userId, superAdminId);
-
-//     res.json({ message: "User verified successfully" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-
-// // Forgot Password
-// exports.forgotPassword = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-//     const user = await findUserByEmail(email);
-
-//     // Always respond with same message to avoid email enumeration
-//     if (!user) {
-//       return res.json({ message: "If email exists, reset link sent" });
-//     }
-
-//     const token = crypto.randomBytes(32).toString("hex");
-//     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-//     await createResetToken(user.id, token, expiresAt);
-
-//     // For now we log the link; later you can email it
-//     console.log(`Reset password link: http://localhost:5000/api/auth/reset-password/${token}`);
-
-//     res.json({ message: "If email exists, reset link sent" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-// // Reset Password
-// exports.resetPassword = async (req, res) => {
-//   try {
-//     const { token } = req.params;
-//     const { password } = req.body;
-
-//     const record = await findResetToken(token);
-
-//     if (!record || new Date(record.expires_at) < new Date()) {
-//       return res.status(400).json({ message: "Invalid or expired token" });
-//     }
-
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     await db.execute(
-//       "UPDATE users SET password = ? WHERE id = ?",
-//       [hashedPassword, record.user_id]
-//     );
-
-//     await markTokenUsed(record.id);
-
-//     res.json({ message: "Password reset successful" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-const db = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const sendEmail = require("../utils/mailer"); 
+const { updateUserProfile } = require("../models/profileModel");
+const { approveUser } = require("../models/verificationModel");
 
 const {
   createUser,
   findUserByEmail,
-  updateLastLogin,
-  approveUser,
-  updateUserProfile
+  verifyUserEmail,
+  updateLastLogin
 } = require("../models/userModel");
 
 const {
   createResetToken,
   findResetToken,
-  markTokenUsed
+  markTokenUsed,
+  deleteUserTokens
 } = require("../models/passwordResetModel");
 
 
-  //  REGISTER
+
+// REGISTER
 exports.register = async (req, res) => {
   try {
     const { first_name, last_name, email, password } = req.body;
@@ -240,23 +35,37 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Email already registered" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Generate email verification token PER USER
+    const password_hash = await bcrypt.hash(password, 10);
     const emailToken = crypto.randomBytes(20).toString("hex");
 
     await createUser(
       first_name,
       last_name,
       email,
-      hashedPassword,
+      password_hash,
       "user",
       emailToken
     );
 
-    res.status(201).json({
-      message: "User registered successfully. Please verify your email."
-    });
+
+    // SEND VERIFICATION EMAIL
+    const verificationLink = `http://localhost:5000/api/auth/verify-email?token=${emailToken}`;
+
+    const html = `
+      <h2>Email Verification</h2>
+      <p>Hello ${first_name},</p>
+      <p>Please click the button below to verify your email:</p>
+      <a href="${verificationLink}" 
+         style="display:inline-block;padding:10px 20px;background:#4CAF50;color:white;text-decoration:none;border-radius:5px;">
+         Verify Email
+      </a>
+    `;
+
+    await sendEmail(email, "Verify Your Email", html);
+
+   res.status(201).json({
+     message: "User registered successfully. Please verify your email."
+   });
 
   } catch (error) {
     console.error(error);
@@ -265,26 +74,16 @@ exports.register = async (req, res) => {
 };
 
 
-
-  //  VERIFY EMAIL
-
+// VERIFY EMAIL
 exports.verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
 
-    const [rows] = await db.execute(
-      "SELECT * FROM users WHERE email_verification_token = ?",
-      [token]
-    );
+    const user = await verifyUserEmail(token);
 
-    if (!rows[0]) {
-      return res.status(400).json({ message: "Invalid token" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
     }
-
-    await db.execute(
-      "UPDATE users SET email_verified = TRUE, email_verification_token = NULL WHERE id = ?",
-      [rows[0].id]
-    );
 
     res.json({ message: "Email verified successfully" });
 
@@ -295,8 +94,7 @@ exports.verifyEmail = async (req, res) => {
 };
 
 
-
-  //  LOGIN
+// LOGIN
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -306,17 +104,30 @@ exports.login = async (req, res) => {
     }
 
     const user = await findUserByEmail(email);
+
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
     if (!user.email_verified) {
-      return res.status(403).json({ message: "Please verify your email before login" });
+      return res.status(403).json({
+        message: "Please verify your email before login"
+      });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
+    if (!user.is_active) {
+      return res.status(403).json({
+        message: "Account is deactivated"
+      });
+    }
+
+    const validPassword = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
+
     if (!validPassword) {
-      return res.status(400).json({ message: "Invalid password" });
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
     await updateLastLogin(user.id);
@@ -335,9 +146,7 @@ exports.login = async (req, res) => {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
-        role: user.role,
-        profile_completed: user.profile_completed,
-        verification_status: user.verification_status
+        role: user.role
       }
     });
 
@@ -348,7 +157,7 @@ exports.login = async (req, res) => {
 };
 
 
-  //  UPDATE PROFILE
+// Update User profile
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -364,8 +173,7 @@ exports.updateProfile = async (req, res) => {
 };
 
 
-
-  //  SUPER ADMIN VERIFY USER
+//  SUPER ADMIN VERIFY USER
 exports.verifyUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -382,26 +190,29 @@ exports.verifyUser = async (req, res) => {
 };
 
 
-
-  //  FORGOT PASSWORD
+//  FORGOT PASSWORD
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
     const user = await findUserByEmail(email);
 
-    // Prevent email enumeration
     if (!user) {
       return res.json({ message: "If email exists, reset link sent" });
     }
 
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
 
-    await createResetToken(user.id, token, expiresAt);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await createResetToken(user.id, hashedToken, expiresAt);
 
     console.log(
-      `Reset password link: http://localhost:5000/api/auth/reset-password/${token}`
+      `Reset link: http://localhost:5000/api/auth/reset-password/${rawToken}`
     );
 
     res.json({ message: "If email exists, reset link sent" });
@@ -412,13 +223,19 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-  //  RESET PASSWORD
+
+//  RESET PASSWORD
 exports.resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
 
-    const record = await findResetToken(token);
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const record = await findResetToken(hashedToken);
 
     if (!record || new Date(record.expires_at) < new Date()) {
       return res.status(400).json({ message: "Invalid or expired token" });
@@ -432,6 +249,7 @@ exports.resetPassword = async (req, res) => {
     );
 
     await markTokenUsed(record.id);
+    await deleteUserTokens(record.user_id);
 
     res.json({ message: "Password reset successful" });
 

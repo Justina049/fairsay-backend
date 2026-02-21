@@ -11,7 +11,7 @@ const createUser = async (
 ) => {
   const [result] = await db.execute(
     `INSERT INTO users 
-     (first_name, last_name, email, password, role, email_verification_token) 
+     (first_name, last_name, email, password_hash, role, email_verification_token) 
      VALUES (?, ?, ?, ?, ?, ?)`,
     [first_name, last_name, email, hashedPassword, role, emailToken]
   );
@@ -25,6 +25,36 @@ const findUserByEmail = async (email) => {
     "SELECT * FROM users WHERE email = ?",
     [email]
   );
+  return rows[0];
+};
+
+// FIND USER BY ID
+const findUserById = async (id) => {
+  const [rows] = await db.execute(
+    "SELECT * FROM users WHERE id = ?",
+    [id]
+  );
+  return rows[0];
+};
+
+
+// VERIFY EMAIL
+const verifyUserEmail = async (token) => {
+  const [rows] = await db.execute(
+    "SELECT id FROM users WHERE email_verification_token = ?",
+    [token]
+  );
+
+  if (!rows[0]) return null;
+
+  await db.execute(
+    `UPDATE users 
+     SET email_verified = TRUE, 
+         email_verification_token = NULL 
+     WHERE id = ?`,
+    [rows[0].id]
+  );
+
   return rows[0];
 };
 
@@ -56,41 +86,74 @@ const updateUserProfile = async (userId, profileData) => {
   );
 };
 
+const upsertUserProfile = async (userId, profileData) => {
+  const { job_title, department, company_name, phone, location } = profileData;
 
-
-// Approve user (Super Admin)
-const approveUser = async (userId, superAdminId) => {
-  // Check if a verification record already exists
-  const [existing] = await db.execute(
-    "SELECT id FROM admin_user_verifications WHERE user_id = ?",
-    [userId]
+  await db.execute(
+    `INSERT INTO user_profiles 
+      (user_id, job_title, department, company_name, phone, location)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       job_title = VALUES(job_title),
+       department = VALUES(department),
+       company_name = VALUES(company_name),
+       phone = VALUES(phone),
+       location = VALUES(location)`,
+    [userId, job_title, department, company_name, phone, location]
   );
+};
 
-  if (existing.length > 0) {
-    // Update existing record
-    await db.execute(
-      `UPDATE admin_user_verifications
-       SET status = 'approved',
-           reviewed_at = NOW(),
-           reviewed_by = ?
-       WHERE user_id = ?`,
-      [superAdminId, userId]
-    );
-  } else {
-    // Insert new record
-    await db.execute(
-      `INSERT INTO admin_user_verifications
-         (user_id, status, reviewed_at, reviewed_by)
-       VALUES (?, 'approved', NOW(), ?)`,
-      [userId, superAdminId]
-    );
-  }
+
+
+// // Approve user (Super Admin)
+// const approveUser = async (userId, superAdminId) => {
+//   // Check if a verification record already exists
+//   const [existing] = await db.execute(
+//     "SELECT id FROM admin_user_verifications WHERE user_id = ?",
+//     [userId]
+//   );
+
+//   if (existing.length > 0) {
+//     // Update existing record
+//     await db.execute(
+//       `UPDATE admin_user_verifications
+//        SET status = 'approved',
+//            reviewed_at = NOW(),
+//            reviewed_by = ?
+//        WHERE user_id = ?`,
+//       [superAdminId, userId]
+//     );
+//   } else {
+//     // Insert new record
+//     await db.execute(
+//       `INSERT INTO admin_user_verifications
+//          (user_id, status, reviewed_at, reviewed_by)
+//        VALUES (?, 'approved', NOW(), ?)`,
+//       [userId, superAdminId]
+//     );
+//   }
+// };
+
+const approveUser = async (userId, superAdminId, notes = null) => {
+  await db.execute(
+    `INSERT INTO employee_verifications
+      (user_id, status, reviewed_by, reviewed_at, notes)
+     VALUES (?, 'approved', ?, NOW(), ?)
+     ON DUPLICATE KEY UPDATE
+       status = 'approved',
+       reviewed_by = VALUES(reviewed_by),
+       reviewed_at = NOW(),
+       notes = VALUES(notes)`,
+    [userId, superAdminId, notes]
+  );
 };
 
 
 module.exports = {
   createUser,
   findUserByEmail,
+  findUserById,
+  verifyUserEmail,
   updateLastLogin,
   updateUserProfile,
   approveUser

@@ -9,7 +9,7 @@ const verifyToken = (req, res, next) => {
       return res.status(401).json({ message: "Access denied. No token provided." });
     }
 
-    // Format: Bearer TOKEN
+    // Expected Format: Bearer TOKEN
     const token = authHeader.split(" ")[1];
 
     if (!token) {
