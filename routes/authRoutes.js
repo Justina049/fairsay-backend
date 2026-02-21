@@ -15,9 +15,9 @@ router.put("/profile", verifyToken, updateProfile);
 // Super Admin only example
 router.put(
   "/admin/verify-user/:userId",
-  verifyToken,
-  roleMiddleware(["super_admin"]),
-  verifyUser
+  verifyToken,                        // JWT middleware
+  roleMiddleware("super_admin"),    // Only super admin can access
+  verifyUser                          // Controller function to verify user
 );
 
 router.post("/forgot-password", forgotPassword);

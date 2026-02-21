@@ -180,7 +180,18 @@ exports.verifyUser = async (req, res) => {
   try {
     const { userId } = req.params;
     const superAdminId = req.user.id;
+    console.log(`Attempting to verify User ID: ${userId} by Admin: ${superAdminId}`);
 
+    // Capture the result of the database operation
+    const result = await approveUser(userId, superAdminId);
+    
+    // Log the result (e.g., rows affected)
+    console.log("Database result:", result);
+
+    if (result.affectedRows === 0) {
+        return res.status(404).json({ message: "User not found or already verified" });
+    }
+    
     await approveUser(userId, superAdminId);
 
     res.json({ message: "User verified successfully" });

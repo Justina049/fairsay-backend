@@ -7,6 +7,10 @@ const verifyToken = (req, res, next) => {
 
     if (!authHeader) {
       return res.status(401).json({ message: "Access denied. No token provided." });
+
+      
+    
+    
     }
 
     // Expected Format: Bearer TOKEN
@@ -21,6 +25,7 @@ const verifyToken = (req, res, next) => {
 
     // Attach user to request
     req.user = decoded;
+console.log("User role in middleware:", req.user.role);
 
     next(); // Continue to route
 
@@ -28,5 +33,6 @@ const verifyToken = (req, res, next) => {
     return res.status(401).json({ message: "Invalid or expired token." });
   }
 };
+
 
 module.exports = verifyToken;
