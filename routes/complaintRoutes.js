@@ -35,9 +35,9 @@ router.post("/:id/submit", verifyToken, submitComplaint);
 
 
 // Get all complaints for the logged-in user
-router.get("/my-list", verifyToken, getMyComplaints);
+router.get("/my-complaints", verifyToken, getMyComplaints);
 
 // Get a specific complaint by Tracking ID
-router.get("/track/:id", verifyToken, getComplaint);
+router.get("/:id", verifyToken, getComplaint);
 
 module.exports = router;
