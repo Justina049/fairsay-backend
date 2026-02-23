@@ -2,6 +2,54 @@ const db = require("../config/db");
 const complaintModel = require("../models/complaintModel");
 const generateTrackingId = require("../helpers/generateTrackingId");
 
+
+
+// --- WHISTLEBLOWER SUBMISSION CONTROLLER ---
+exports.submitWhistleblowing = async (req, res) => {
+  console.log("--- START SUBMISSION ---");
+  const connection = await db.getConnection();
+  console.log("1. Connection Acquired");
+  try {
+    await connection.beginTransaction();
+    console.log("2. Transaction Started");
+
+    const trackingId = await generateTrackingId(connection);
+    console.log("3. Tracking ID Generated:", trackingId);
+
+    const complaintId = await complaintModel.submitWhistleblowerReport(
+      connection, 
+      req.user.id, 
+      trackingId, 
+      req.body
+    );
+    console.log("4. Complaint Created, ID:", complaintId);
+
+    if (req.files && req.files.length > 0) {
+      console.log(`5. Uploading ${req.files.length} files...`);
+      for (const file of req.files) {
+        await complaintModel.addEvidence(connection, complaintId, file.path, file.mimetype, "Whistleblower evidence");
+      }
+    }
+
+    await complaintModel.insertStatusHistory(connection, complaintId, req.user.id, 'submitted');
+    console.log("6. History Inserted");
+
+    await connection.commit();
+    console.log("7. Transaction Committed");
+    res.status(201).json({ success: true, tracking_id: trackingId });
+
+  } catch (err) {
+    console.log("!!! ERROR OCCURRED !!!");
+    if (connection) await connection.rollback();
+    console.error("Submission Error:", err);
+    res.status(500).json({ message: "Failed to submit report", error: err.message });
+  } finally {
+    connection.release();
+    console.log("8. Connection Released");
+  }
+};
+
+// This controller handles the multi-step complaint submission process, including the new whistleblower submission endpoint. Each step is designed to be modular, allowing for easy maintenance and future enhancements.
 // STEP 1
 exports.createDraftComplaint = async (req, res) => {
   try {
@@ -53,6 +101,7 @@ exports.uploadEvidence = async (req, res) => {
 
     const uploadPromises = req.files.map(file => {
       return complaintModel.addEvidence(
+        db,
         complaintId,
         file.path,             
         file.mimetype,

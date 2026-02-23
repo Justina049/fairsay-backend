@@ -13,9 +13,17 @@ const {
   uploadEvidence,
   submitComplaint,
   getMyComplaints,
-  getComplaint
+  getComplaint,
+  submitWhistleblowing
 } = require("../controllers/complaintController");
 
+// --- WHISTLEBLOWER ROUTE ---
+router.post(
+  "/whistleblower-submit", 
+  verifyToken, 
+  upload.array("files", 5), 
+  submitWhistleblowing
+);
 
 // Step 1: Create the initial draft
 router.post("/", verifyToken, createDraftComplaint);

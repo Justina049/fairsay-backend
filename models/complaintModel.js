@@ -46,12 +46,29 @@ submitWhistleblowerReport: async (connection, userId, trackingId, data) => {
     return result;
   },
 
-  // STEP 4: Add Evidence URLs
-  addEvidence: async (complaintId, fileUrl, fileType, description) => {
-    const query = `INSERT INTO complaint_evidence (complaint_id, file_url, file_type, description) VALUES (?, ?, ?, ?)`;
-    const [result] = await db.execute(query, [complaintId, fileUrl, fileType, description]);
-    return result;
-  },
+  addEvidence: async (executor, complaintId, fileUrl, fileType, description) => {
+  const query = `
+    INSERT INTO complaint_evidence
+    (complaint_id, file_url, file_type, description)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  const [result] = await executor.execute(query, [
+    complaintId,
+    fileUrl,
+    fileType,
+    description
+  ]);
+
+  return result;
+},
+
+  // // STEP 4: Add Evidence URLs
+  // addEvidence: async (complaintId, fileUrl, fileType, description) => {
+  //   const query = `INSERT INTO complaint_evidence (complaint_id, file_url, file_type, description) VALUES (?, ?, ?, ?)`;
+  //   const [result] = await db.execute(query, [complaintId, fileUrl, fileType, description]);
+  //   return result;
+  // },
 
   getComplaintById: async (id) => {
   const query = `SELECT * FROM complaints WHERE id = ?`;
@@ -83,35 +100,5 @@ submitWhistleblowerReport: async (connection, userId, trackingId, data) => {
   }
 };
 
-// Add this to your complaintModel object
-submitWhistleblowerReport: async (connection, userId, trackingId, data) => {
-  const query = `
-    INSERT INTO complaints (
-      user_id, 
-      tracking_id, 
-      violation_category, 
-      title, 
-      description, 
-      date_of_incident, 
-      location, 
-      status, 
-      current_step, 
-      is_submitted, 
-      is_draft,
-      submitted_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'submitted', 5, 1, 0, NOW())
-  `;
-  const params = [
-    userId,
-    trackingId,
-    data.violationType,
-    `Whistleblower: ${data.violationType}`,
-    data.description,
-    data.dateOccurred || null,
-    data.location || null
-  ];
-  const [result] = await connection.execute(query, params);
-  return result.insertId;
-},
 
 module.exports = complaintModel;
