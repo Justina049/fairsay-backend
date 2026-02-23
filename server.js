@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+const aiRoutes = require("./routes/aiRoutes");
 
 // connect to database
 require("./config/db");
@@ -17,6 +18,9 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/complaints", complaintRoutes);
+// AI chat endpoint
+app.use("/api/ai", aiRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("FairSay API Running");
