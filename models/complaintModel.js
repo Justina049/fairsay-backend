@@ -1,27 +1,28 @@
 const db = require("../config/db");
 
 const complaintModel = {
-  // --- SINGLE ACTION FLOW (Whistleblower) ---
-  submitWhistleblowerReport: async (connection, userId, trackingId, data) => {
-    const query = `
-      INSERT INTO complaints (
-        user_id, tracking_id, violation_category, title, description, 
-        date_of_incident, location, status, current_step, 
-        is_submitted, is_draft, submitted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'submitted', 5, 1, 0, NOW())
-    `;
-    const params = [
-      userId,
-      trackingId,
-      data.violationType, 
-      `Whistleblower: ${data.violationType}`,
-      data.description,
-      data.dateOccurred || null,
-      data.location || null
-    ];
-    const [result] = await connection.execute(query, params);
-    return result;
-  },
+  // whistleblower report submission
+submitWhistleblowerReport: async (connection, userId, trackingId, data) => {
+  const query = `
+    INSERT INTO complaints (
+      user_id, tracking_id, violation_category, title, description, 
+      date_of_incident, location, status, current_step, 
+      is_submitted, is_draft, submitted_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'submitted', 5, 1, 0, NOW())
+  `;
+  const params = [
+    userId,
+    trackingId,
+    data.violationType, 
+    `Anonymous Report: ${data.violationType}`,
+    data.description,
+    data.dateOccurred || null,
+    data.location || null
+  ];
+  const [result] = await connection.execute(query, params);
+  return result.insertId;
+},
+
 
   // STEP 1: Create Draft
   createDraft: async (userId, data) => {
