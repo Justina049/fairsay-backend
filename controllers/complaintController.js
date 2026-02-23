@@ -1,123 +1,144 @@
-const {
-  createComplaint,
-  getAllComplaints,
-  getComplaintsByUser,
-  getComplaintByTrackingId,
-  updateComplaintStatus,
-} = require("../models/complaintModel");
+const db = require("../config/db");
+const complaintModel = require("../models/complaintModel");
+const generateTrackingId = require("../helpers/generateTrackingId");
 
-const { v4: uuidv4 } = require("uuid");
+// STEP 1
+exports.createDraftComplaint = async (req, res) => {
+  try {
+    const result = await complaintModel.createDraft(req.user.id, req.body);
+    res.status(201).json({ message: "Draft created", complaintId: result.insertId });
+  } catch (err) {
+    res.status(500).json({ message: "Error creating draft", error: err.message });
+  }
+};
 
-// Submit a new complaint
+// STEP 2
+exports.updateStep2 = async (req, res) => {
+  try {
+    await complaintModel.updateStep2Data(req.params.id, req.body);
+    res.json({ message: "Step 2 details updated" });
+  } catch (err) {
+    res.status(500).json({ message: "Update failed" });
+  }
+};
+
+// STEP 3
+exports.addComplaintParties = async (req, res) => {
+  try {
+    const { parties } = req.body;
+    await complaintModel.addParties(req.params.id, parties);
+    res.json({ message: "Parties linked successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Error adding parties" });
+  }
+};
+
+
+exports.uploadEvidence = async (req, res) => {
+  try {
+    console.log("FILES RECEIVED:", req.files);
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "No files provided" });
+    }
+
+    const complaintId = req.params.id;
+
+    // Optional but recommended: verify complaint belongs to user
+    const complaint = await complaintModel.getComplaintById(complaintId);
+
+    if (!complaint || complaint.user_id !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized access" });
+    }
+
+    const uploadPromises = req.files.map(file => {
+      return complaintModel.addEvidence(
+        complaintId,
+        file.path,             
+        file.mimetype,
+        req.body.description || null
+      );
+    });
+
+    await Promise.all(uploadPromises);
+
+    res.status(200).json({
+      message: "Evidence uploaded successfully"
+    });
+
+  } catch (err) {
+    console.error("UPLOAD ERROR:", err);
+    res.status(500).json({
+      message: "Server Error",
+      error: err.message
+    });
+  }
+};
+
+// STEP 5: Submit with Transaction and Sequential ID
 exports.submitComplaint = async (req, res) => {
+  const connection = await db.getConnection();
   try {
-    const { complaint_type, title, description, is_anonymous } = req.body;
+    await connection.beginTransaction();
 
-    if (!complaint_type || !title || !description) {
-      return res.status(400).json({ message: "All required fields must be filled" });
+    const complaint = await complaintModel.getComplaintByIdForUpdate(connection, req.params.id);
+
+    if (!complaint || complaint.user_id !== req.user.id) {
+      await connection.rollback();
+      return res.status(403).json({ message: "Unauthorized access" });
     }
 
-    const complaintData = {
-      user_id: req.user.id,
-      complaint_type,
-      title,
-      description,
-      is_anonymous: is_anonymous || false,
-      tracking_id: uuidv4()
-    };
+    if (complaint.is_submitted) {
+      await connection.rollback();
+      return res.status(400).json({ message: "Already submitted" });
+    }
 
-    await createComplaint(complaintData);
+    // Pass the active connection to ensure the lock works
+    const trackingId = await generateTrackingId(connection);
 
-    res.status(201).json({
-      message: "Complaint submitted successfully",
-      tracking_id: complaintData.tracking_id
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    await complaintModel.markComplaintSubmitted(connection, req.params.id, trackingId);
+    await complaintModel.insertStatusHistory(connection, req.params.id, req.user.id, 'submitted');
+
+    await connection.commit();
+    res.json({ message: "Submission successful", tracking_id: trackingId });
+
+  } catch (err) {
+    await connection.rollback();
+    console.error("Submission Error:", err);
+    res.status(500).json({ message: "Transaction failed" });
+  } finally {
+    connection.release();
   }
 };
 
-// Get all complaints (Admin sees all, user sees their own)
-exports.getAllComplaints = async (req, res) => {
+// Get all complaints for the logged-in user
+exports.getMyComplaints = async (req, res) => {
   try {
-    let complaints;
-
-    if (req.user.role === "admin") {
-      complaints = await getAllComplaints();
-    } else {
-      complaints = await getComplaintsByUser(req.user.id);
-    }
-
-    // Optionally hide user_id if complaint is anonymous and requester is not admin
-    complaints = complaints.map(c => ({
-      ...c,
-      user_id: c.is_anonymous && req.user.role !== "admin" ? null : c.user_id
-    }));
-
-    res.json({
-      success: true,
-      message: "Complaints fetched successfully",
-      count: complaints.length,
-      complaints
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    const [complaints] = await db.execute(
+      "SELECT * FROM complaints WHERE user_id = ? ORDER BY created_at DESC", 
+      [req.user.id]
+    );
+    res.json({ complaints });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching complaints" });
   }
 };
 
-// Get single complaint by tracking ID
+// Get a specific complaint by Tracking ID (or ID)
 exports.getComplaint = async (req, res) => {
   try {
-    const { tracking_id } = req.params;
-    const complaint = await getComplaintByTrackingId(tracking_id);
+    const { id } = req.params;
+    const [rows] = await db.execute(
+      "SELECT * FROM complaints WHERE id = ? OR tracking_id = ?", 
+      [id, id]
+    );
 
-    if (!complaint) return res.status(404).json({ message: "Complaint not found" });
-
-    if (req.user.role !== "admin" && complaint.user_id !== req.user.id) {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
-    // Hide user_id if anonymous and requester is not admin
-    if (complaint.is_anonymous && req.user.role !== "admin") {
-      complaint.user_id = null;
-    }
-
-    res.json({
-      success: true,
-      message: "Complaint fetched successfully",
-      complaint
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Admin updates complaint status
-exports.updateComplaintStatus = async (req, res) => {
-  try {
-    const { tracking_id } = req.params;
-    const { status } = req.body;
-
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
-    }
-
-    const allowedStatuses = ["pending", "in_progress", "resolved"];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status value" });
-    }
-
-    const result = await updateComplaintStatus(tracking_id, status);
-    if (result.affectedRows === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({ message: "Complaint not found" });
     }
 
-    res.json({ success: true, message: "Complaint status updated successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    res.json({ complaint: rows[0] });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching complaint" });
   }
 };
