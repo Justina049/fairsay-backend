@@ -26,6 +26,10 @@ app.get("/", (req, res) => {
   res.send("FairSay API Running");
 });
 
+// Health / Ping Endpoint
+app.get("/ping", (req, res) => {
+  res.status(200).send("OK");
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
