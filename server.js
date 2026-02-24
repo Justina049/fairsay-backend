@@ -4,7 +4,7 @@ require("dotenv").config();
 const aiRoutes = require("./routes/aiRoutes");
 
 // connect to database
-require("./config/db");
+// require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
