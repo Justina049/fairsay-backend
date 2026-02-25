@@ -1,19 +1,24 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+
 const aiRoutes = require("./routes/aiRoutes");
-
-// connect to database
-// require("./config/db");
-
 const authRoutes = require("./routes/authRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
 
-
-
 const app = express();
 
-app.use(cors());
+
+
+app.use(cors({
+  origin: [
+    "http://localhost:5173",               // Local frontend
+    process.env.FRONTEND_URL               // Production frontend
+  ],
+  credentials: true
+}));
+
+
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
@@ -34,6 +39,7 @@ app.get("/ping", (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
 
+// GLOBAL ERROR HANDLER
 // app.use((err, req, res, next) => {
 //   console.error("GLOBAL ERROR HANDLER:", err);
 
