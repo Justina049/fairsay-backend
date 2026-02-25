@@ -51,7 +51,7 @@ exports.register = async (req, res) => {
 
 
     // SEND VERIFICATION EMAIL
-    const verificationLink = `http://localhost:5000/api/auth/verify-email?token=${emailToken}`;
+    const verificationLink = `https://fairsay-backend.onrender.com/api/auth/verify-email?token=${emailToken}`;
 
     const html = `
       <h2>Email Verification</h2>
