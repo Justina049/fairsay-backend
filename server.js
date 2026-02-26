@@ -4,25 +4,26 @@ require("dotenv").config();
 
 const aiRoutes = require("./routes/aiRoutes");
 const authRoutes = require("./routes/authRoutes");
+const progressRoutes = require("./routes/progressRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
 
 const app = express();
 
-
-
-app.use(cors({
-  origin: [
-    "http://localhost:5173",               // Local frontend
-    process.env.FRONTEND_URL               // Production frontend
-  ],
-  credentials: true
-}));
-
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173", // Local frontend
+      process.env.FRONTEND_URL, // Production frontend
+    ],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/complaints", complaintRoutes);
+app.use("/api/users", progressRoutes);
 // AI chat endpoint
 app.use("/api/ai", aiRoutes);
 
