@@ -68,6 +68,7 @@ exports.register = async (req, res) => {
     res.status(201).json({
       message: "User registered successfully. Please verify your email.",
     });
+
   } catch (error) {
     console.error("Register route error:", error); // logs full error to server console
     res.status(500).json({ message: error.message, stack: error.stack });
@@ -88,7 +89,9 @@ exports.verifyEmail = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired token" });
     }
 
-    res.json({ message: "Email verified successfully" });
+    return res.redirect("http://localhost:5173/sign-in?verified=true");
+
+    // res.json({ message: "Email verified successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -147,6 +150,8 @@ exports.login = async (req, res) => {
         last_name: user.last_name,
         email: user.email,
         role: user.role,
+        email_verified: user.email_verified,
+        profile_completed: user.profile_completed,
         course_completed: user.course_completed,
         lessons_completed: user.lessons_completed,
       },
