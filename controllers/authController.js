@@ -48,7 +48,7 @@ exports.register = async (req, res) => {
       "user",
       emailToken
     );
-
+  
 
     // SEND VERIFICATION EMAIL
     const verificationLink = `https://fairsay-backend.onrender.com/api/auth/verify-email?token=${emailToken}`;
@@ -65,19 +65,17 @@ exports.register = async (req, res) => {
 
     await sendEmail(email, "Verify Your Email", html);
 
-   res.status(201).json({
-     message: "User registered successfully. Please verify your email."
-   });
-
+    res.status(201).json({
+      message: "User registered successfully. Please verify your email.",
+    });
   } catch (error) {
     console.error("Register route error:", error); // logs full error to server console
     res.status(500).json({ message: error.message, stack: error.stack });
-  
+
     // console.error(error);
     // res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // VERIFY EMAIL
 exports.verifyEmail = async (req, res) => {
@@ -91,13 +89,11 @@ exports.verifyEmail = async (req, res) => {
     }
 
     res.json({ message: "Email verified successfully" });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // LOGIN
 exports.login = async (req, res) => {
@@ -105,7 +101,9 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
     }
 
     const user = await findUserByEmail(email);
@@ -116,20 +114,17 @@ exports.login = async (req, res) => {
 
     if (!user.email_verified) {
       return res.status(403).json({
-        message: "Please verify your email before login"
+        message: "Please verify your email before login",
       });
     }
 
     if (!user.is_active) {
       return res.status(403).json({
-        message: "Account is deactivated"
+        message: "Account is deactivated",
       });
     }
 
-    const validPassword = await bcrypt.compare(
-      password,
-      user.password_hash
-    );
+    const validPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!validPassword) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -151,10 +146,11 @@ exports.login = async (req, res) => {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+        course_completed: user.course_completed,
+        lessons_completed: user.lessons_completed,
+      },
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
