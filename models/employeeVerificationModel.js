@@ -1,4 +1,4 @@
-const db = require("../config/db");
+const db = require('../config/db');
 
 const saveEmployeeVerification = async ({ userId, declaration, proofUrl, consentData, consentPrivacy }) => {
   return await db.execute(
@@ -15,7 +15,6 @@ const saveEmployeeVerification = async ({ userId, declaration, proofUrl, consent
     [userId, declaration, proofUrl, consentData, consentPrivacy]
   );
 };
-
 
 const approveUser = async (userId, superAdminId, notes = null) => {
   return await db.execute(
